@@ -24,7 +24,7 @@ fi
 echo ""
 echo -e "${BLUE}2. Verificando arquivos...${NC}"
 
-if [ -f "zip_code_data.csv" ]; then
+if [ -f "core/zip_code_data.csv" ]; then
     echo -e "${GREEN}Arquivo zip_code_data.csv encontrado${NC}"
 else
     echo -e "${YELLOW}Arquivo zip_code_data.csv não encontrado${NC}"
@@ -40,7 +40,7 @@ echo "Para executar o sistema, escolha um modo:"
 echo ""
 echo -e "${BLUE}Modo Interface Web (Recomendado):${NC}"
 echo "  python app.py"
-echo "  Depois acesse: http://localhost:7750"
+echo "  Depois acesse: http://localhost:8000"
 echo ""
 echo -e "${BLUE}Modo CLI:${NC}"
 echo "  python app.py --cli"
