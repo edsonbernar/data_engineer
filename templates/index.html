@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Processamento de CEPs</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ Sistema de Processamento de CEPs</h1>
+            <p class="subtitle">Processamento paralelo de CEPs usando ViaCEP API</p>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Processar CEPs</h2>
+            </div>
+            <div class="card-body">
+                <p class="info-text">
+                    📄 Arquivo de entrada: <strong>zip_code_data.csv</strong><br>
+                    🔄 Processamento paralelo com até <strong>50 requisições simultâneas</strong><br>
+                    💾 Resultados salvos em: <strong>SQLite, JSON e XML</strong>
+                </p>
+                
+                <button id="processBtn" class="btn-primary" onclick="processData()">
+                    <span class="btn-icon">▶️</span> Processar CEPs
+                </button>
+                
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Processando CEPs... Por favor aguarde.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="statsCard" class="card hidden">
+            <div class="card-header">
+                <h2>📊 Estatísticas do Processamento</h2>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Total de CEPs</div>
+                        <div class="stat-value" id="statTotal">-</div>
+                    </div>
+                    <div class="stat-item success">
+                        <div class="stat-label">Sucessos</div>
+                        <div class="stat-value" id="statSuccess">-</div>
+                    </div>
+                    <div class="stat-item error">
+                        <div class="stat-label">Erros</div>
+                        <div class="stat-value" id="statErrors">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Taxa de Sucesso</div>
+                        <div class="stat-value" id="statRate">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Tempo Total</div>
+                        <div class="stat-value" id="statTime">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">CEPs/segundo</div>
+                        <div class="stat-value" id="statSpeed">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="filesCard" class="card hidden">
+            <div class="card-header">
+                <h2>📁 Arquivos Gerados</h2>
+            </div>
+            <div class="card-body">
+                <div class="file-list">
+                    <div class="file-item">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name" id="fileJson">enderecos.json</span>
+                        <span class="file-badge">JSON</span>
+                    </div>
+                    <div class="file-item">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name" id="fileXml">enderecos.xml</span>
+                        <span class="file-badge">XML</span>
+                    </div>
+                    <div class="file-item" id="fileErrorContainer">
+                        <span class="file-icon">⚠️</span>
+                        <span class="file-name" id="fileErrors">errors.csv</span>
+                        <span class="file-badge error">ERROS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsCard" class="card hidden">
+            <div class="card-header">
+                <h2>✅ Endereços Processados (Preview - 10 primeiros)</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>CEP</th>
+                                <th>Logradouro</th>
+                                <th>Bairro</th>
+                                <th>Cidade</th>
+                                <th>UF</th>
+                                <th>Estado</th>
+                                <th>Região</th>
+                                <th>DDD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorsCard" class="card hidden">
+            <div class="card-header">
+                <h2>⚠️ Erros Encontrados (Preview - 10 primeiros)</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table id="errorsTable">
+                        <thead>
+                            <tr>
+                                <th>CEP</th>
+                                <th>Erro</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="alert alert-error hidden">
+            <strong>❌ Erro:</strong> <span id="errorText"></span>
+        </div>
+
+        <footer>
+            <p>Sistema desenvolvido com FastAPI + aiohttp + Pandas</p>
+            <p class="footer-small">Processamento paralelo otimizado para máxima performance</p>
+        </footer>
+    </div>
+
+    <script>
+        async function processData() {
+            const btn = document.getElementById('processBtn');
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Reset
+            errorMessage.classList.add('hidden');
+            document.getElementById('statsCard').classList.add('hidden');
+            document.getElementById('filesCard').classList.add('hidden');
+            document.getElementById('resultsCard').classList.add('hidden');
+            document.getElementById('errorsCard').classList.add('hidden');
+            
+            // Show loading
+            btn.disabled = true;
+            loading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao processar');
+                }
+                
+                // Show stats
+                const stats = data.stats;
+                const duration = stats.end_time - stats.start_time;
+                const successRate = (stats.success / stats.total * 100).toFixed(2);
+                const speed = (stats.total / duration).toFixed(2);
+                
+                document.getElementById('statTotal').textContent = stats.total.toLocaleString();
+                document.getElementById('statSuccess').textContent = stats.success.toLocaleString();
+                document.getElementById('statErrors').textContent = stats.errors.toLocaleString();
+                document.getElementById('statRate').textContent = successRate + '%';
+                document.getElementById('statTime').textContent = duration.toFixed(2) + 's';
+                document.getElementById('statSpeed').textContent = speed;
+                
+                document.getElementById('statsCard').classList.remove('hidden');
+                
+                // Show files
+                if (data.files.errors_csv) {
+                    document.getElementById('fileErrorContainer').classList.remove('hidden');
+                } else {
+                    document.getElementById('fileErrorContainer').classList.add('hidden');
+                }
+                document.getElementById('filesCard').classList.remove('hidden');
+                
+                // Show results table
+                if (data.preview_results && data.preview_results.length > 0) {
+                    const tbody = document.getElementById('resultsBody');
+                    tbody.innerHTML = '';
+                    
+                    data.preview_results.forEach(result => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${result.cep || '-'}</td>
+                            <td>${result.logradouro || '-'}</td>
+                            <td>${result.bairro || '-'}</td>
+                            <td>${result.localidade || '-'}</td>
+                            <td>${result.uf || '-'}</td>
+                            <td>${result.estado || '-'}</td>
+                            <td>${result.regiao || '-'}</td>
+                            <td>${result.ddd || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    document.getElementById('resultsCard').classList.remove('hidden');
+                }
+                
+                // Show errors table
+                if (data.preview_errors && data.preview_errors.length > 0) {
+                    const tbody = document.getElementById('errorsBody');
+                    tbody.innerHTML = '';
+                    
+                    data.preview_errors.forEach(error => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${error.cep}</td>
+                            <td>${error.error}</td>
+                            <td>${new Date(error.timestamp).toLocaleString('pt-BR')}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    document.getElementById('errorsCard').classList.remove('hidden');
+                }
+                
+            } catch (error) {
+                document.getElementById('errorText').textContent = error.message;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                loading.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
