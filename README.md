@@ -48,17 +48,27 @@ python app.py --cli
 
 ```
 cep_project/
-├── app.py                  # Aplicação principal
+├── core
+│   └── data_base.py          # SQLite (rotina data base creation)
+│   └── settings.py           # File settings
+│   └── zip_code_data.csv     # CSV de entrada - fonte de CEPs
+├── out_put
+│   └── cep.db                # SQLite (criado automaticamente)
+│   └── enderecos.json        # Saída JSON
+│   └── enderecos.xml         # Saída XML
+│   └── errors.csv            # Erros (se houver)
+├── processors
+│   └── cep_processor.py      # Processador principal cep
+│   └── cli_cep_processor.py  # Chamada consolo
+│   └── route_processor.py    # Classe processor rota cep
 ├── templates/
-│   └── index.html         # Template HTML
+│   └── index.html            # Template HTML
 ├── static/
-│   └── style.css          # Estilos CSS
-├── requirements.txt       # Dependências Python
-├── zip_code_data.csv      # CSV de entrada (seus CEPs)
-├── cep.db                 # SQLite (criado automaticamente)
-├── enderecos.json         # Saída JSON
-├── enderecos.xml          # Saída XML
-└── errors.csv             # Erros (se houver)
+│   └── style.css             # Estilos CSS
+├── requirements.txt          # Dependências Python
+├── Dockerfile                # Dockerfile
+├── setup.sh                  # file run
+├── app.py                    # Aplicação principal
 ```
 
 ## Banco de Dados SQLite
@@ -130,7 +140,7 @@ cep,error,timestamp
 Você pode ajustar estas constantes no `app.py`:
 
 ```python
-MAX_CONCURRENT_REQUESTS = 5  # Requisições simultâneas
+MAX_CONCURRENT_REQUESTS = 5   # Requisições simultâneas
 REQUEST_TIMEOUT = 10          # Timeout em segundos
 MAX_RETRIES = 2               # Tentativas em caso de erro
 ```
@@ -170,17 +180,6 @@ Processa todos os CEPs do arquivo CSV
     "xml": "enderecos.xml",
     "errors_csv": "errors.csv"
   }
-}
-```
-
-### `GET /stats`
-Retorna estatísticas do banco de dados
-
-**Resposta:**
-```json
-{
-  "total_results": 28,
-  "total_errors": 2
 }
 ```
 
