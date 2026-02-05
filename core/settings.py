@@ -23,12 +23,12 @@ class Settings:
     JSON_OUTPUT: str = BASE_DIR / "out_put" / "enderecos.json"
     XML_OUTPUT: str = BASE_DIR / "out_put" / "enderecos.xml"
 
-    MAX_CONCURRENT_REQUESTS: int = 50  # Limite de requisições simultâneas
+    MAX_CONCURRENT_REQUESTS: int = 10  # Limite de requisições simultâneas
     REQUEST_TIMEOUT: int = 10  # Timeout em segundos
     MAX_RETRIES: int = 2  # Número máximo de tentativas
     # O ViaCEP é uma API pública com rate limit de ~300 req/mi
-    SERVICE_CEP: str = "https://viacep.com.br/ws/{cep}/json/"
-    #SERVICE_CEP: str = "https://brasilapi.com.br/api/cep/v1/{cep}"
+    #SERVICE_CEP: str = "https://viacep.com.br/ws/{cep}/json/"
+    SERVICE_CEP: str = "https://brasilapi.com.br/api/cep/v1/{cep}"
 
 
     TEMPLATES: Jinja2Templates = Jinja2Templates(directory=str(os.path.join(BASE_DIR, "templates")))
